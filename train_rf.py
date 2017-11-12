@@ -11,23 +11,39 @@ def main():
   raw_data = pd.read_csv("data.csv")
   data = raw_data[["openprice", "datetime"]].dropna()
 
-  df = pd.DataFrame({
-    'time': pd.to_datetime(data["datetime"].astype(datetime)),
-    'price': [ int(d) for d in data["openprice"] ] 
-  })
+  # df = pd.DataFrame({
+  #   'time': pd.to_datetime(data["datetime"].astype(datetime)),
+  #   'price': [ int(d) for d in data["openprice"] ] 
+  # })
 
-  df_train = raw_data[["lowprice","closeprice","volume","datetime", "highprice"]]
+  # 価格の上がり下がりなんかを記録するカラムを作成する
+  updown = []
+  updown_elem = {"up": 1, "down": 2, "flat": 3}
+  raw_data_value = raw_data["openprice"].values
+  
+  for index, current_data in enumerate(raw_data_value):
+    if index is 0:
+      updown.append(updown_elem["flat"])
+      continue
+    
+    if current_data > raw_data_value[index-1]:
+      updown.append(updown_elem["up"])
+    elif current_data is raw_data_value[index-1]:
+      updown.append(updown_elem["flat"])
+    else:
+      updown.append(updown_elem["down"])
+  
+  raw_data["updown"] = updown
+
+  df_train = raw_data[["lowprice","closeprice","volume","datetime", "highprice", "updown"]]
   df_label = raw_data[["openprice"]]
   
   x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_size=0.8, random_state=1)
 
-  # print(y_train.values)
   model = RandomForestClassifier(n_estimators=10, verbose=1)
-  predict_options = ["highprice","lowprice","closeprice","volume"]
+  predict_options = ["highprice","lowprice","closeprice","volume", "updown"]
   output = model.fit(x_train[predict_options].values, np.reshape(y_train.values, (-1, ))).predict(x_test[predict_options].values)
-
-  print(output)
-  print(accuracy_score(y_test, output))
+  
   # fig = plt.figure()
   # ax = fig.add_subplot(111)
 
