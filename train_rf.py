@@ -16,15 +16,18 @@ def main():
     'price': [ int(d) for d in data["openprice"] ] 
   })
 
-  df_train = raw_data[["openprice","lowprice","closeprice","volume","datetime"]]
-  df_label = raw_data[["highprice"]]
+  df_train = raw_data[["lowprice","closeprice","volume","datetime", "highprice"]]
+  df_label = raw_data[["openprice"]]
   
   x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_size=0.8, random_state=1)
 
   # print(y_train.values)
   model = RandomForestClassifier(n_estimators=10, verbose=1)
-  output = model.fit(x_train[["openprice","lowprice","closeprice","volume"]].values, np.reshape(y_train.values, (-1, ))).predict(x_test[["openprice","lowprice","closeprice","volume"]].values)
-  # print(output)
+  predict_options = ["highprice","lowprice","closeprice","volume"]
+  output = model.fit(x_train[predict_options].values, np.reshape(y_train.values, (-1, ))).predict(x_test[predict_options].values)
+
+  print(output)
+  print(accuracy_score(y_test, output))
   # fig = plt.figure()
   # ax = fig.add_subplot(111)
 
