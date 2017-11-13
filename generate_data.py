@@ -5,8 +5,9 @@ import datetime
 
 def generate_csv(dict_data, periods, after):
   datetime_ary = []
-  origin_date_str = '2017/01/01 00:00:00'
-  origin = datetime.datetime.strptime(origin_date_str, '%Y/%m/%d %H:%M:%S')
+  origin_date_str = datetime.datetime.fromtimestamp(int(after))
+  print(origin_date_str)
+  origin = datetime.datetime.strptime(str(origin_date_str), '%Y-%m-%d %H:%M:%S')
   
   while origin < datetime.datetime.now():
     datetime_ary.append(origin)
@@ -23,8 +24,8 @@ def generate_csv(dict_data, periods, after):
   print("succeeded!")
 
 def main():
-  after = "1483196400"
-  periods = "21600"
+  after = "1501513200"
+  periods = "300"
   url = "https://api.cryptowat.ch/markets/bitflyer/btcjpy/ohlc?periods=" + periods + "&after=" + after
 
   with urllib.request.urlopen(url) as response:
