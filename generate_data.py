@@ -3,7 +3,7 @@ import json
 import csv
 import datetime
 
-def generate_csv(dict_data, periods):
+def generate_csv(dict_data, periods, after):
   datetime_ary = []
   origin_date_str = '2017/01/01 00:00:00'
   origin = datetime.datetime.strptime(origin_date_str, '%Y/%m/%d %H:%M:%S')
@@ -30,7 +30,7 @@ def main():
   with urllib.request.urlopen(url) as response:
     result = json.loads(response.read().decode('UTF-8'))
     # print(result['result'][periods])
-    generate_csv(result['result'][periods], periods)
+    generate_csv(result['result'][periods], periods, after)
 
 if __name__ == '__main__':
   main()
