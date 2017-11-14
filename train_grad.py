@@ -12,10 +12,13 @@ def main():
   raw_data = pd.read_csv("data.csv").dropna()
   data = raw_data[["openprice", "datetime"]].dropna()
 
-  df = pd.DataFrame({
-    'time': pd.to_datetime(data["datetime"].astype(datetime)),
-    'price': [ int(d) for d in data["openprice"] ] 
-  })
+  try:
+    df = pd.DataFrame({
+      'time': pd.to_datetime(data["datetime"].astype(datetime)),
+      'price': [ int(d) for d in data["openprice"] ] 
+    })
+  except:
+    print("some error has occured")
 
   # 価格の上がり下がりなんかを記録するカラムを作成する
   updown = []
@@ -23,12 +26,13 @@ def main():
   raw_data_val = raw_data["openprice"].values
 
   for index, current_data in enumerate(raw_data_val):
+    print("%s, %s" % (current_data, raw_data["datetime"].values[-1]))
     if(index == np.size(raw_data_val)-1):
       break
     else:
-      if(current_data < raw_data_val[index+1]):
+      if(int(current_data) < int(raw_data_val[index+1])):
         updown.append(updown_elem["up"])
-      elif(current_data is raw_data_val[index+1]):
+      elif(int(current_data) == int(raw_data_val[index+1])):
         updown.append(updown_elem["flat"])
       else:
         updown.append(updown_elem["down"])
