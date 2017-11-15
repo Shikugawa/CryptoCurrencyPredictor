@@ -40,23 +40,22 @@ def main():
   # datetimeを切ってhoutのみ抽出
   time_array = []
   for value in np.reshape(raw_data[["datetime"]].values, (-1, )):
-    print(value)
     time_array.append(re.match(r"\d{4}-\d{1,2}-\d{1,2} (\d\d):\d\d:\d\d", str(value)).group(1))
   raw_data["hour"] = pd.Series(time_array)
 
   raw_data.drop([np.size(raw_data["openprice"].values)-1])
-  print(np.size(raw_data["openprice"].values)-1)
-  print(np.size(updown))
   raw_data["updown"] = pd.Series(updown)
   raw_data = raw_data.dropna()
   print(raw_data)
 
+  # openprice...一定期間の最初の価格, closeprice..一定期間の最後の価格
   options = ["lowprice","closeprice","volume","hour","highprice","openprice"]
   df_train = raw_data[options]
   df_label = raw_data[["updown"]]
   
   x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_size=0.9, random_state=1)
 
+  # 最新の価格データを取得し、updownカラムに上がり下がりデータを追記させればよい
   model = GradientBoostingClassifier(n_estimators=100, verbose=1)
   output = model.fit(x_train[options].values, np.reshape(y_train.values, (-1, ))).predict(x_test[options].values)
 
@@ -66,7 +65,7 @@ def main():
 
   # x = range(0, len(np.reshape(x_test["datetime"].astype(datetime).values, (-1, ))))
   # plt.xticks(x, np.reshape(x_test["datetime"].astype(datetime).values, (-1, )))
-  # ax.plot(np.reshape(df['price'].values, (-1, )))
+  ax.plot(np.reshape(df['price'].values, (-1, )))
   # ax.plot(x, output, color="r")
   # plt.show()
 
