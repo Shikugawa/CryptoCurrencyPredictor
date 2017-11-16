@@ -7,14 +7,29 @@ import time
 def generate_csv(dict_data, periods, after):
   for date in dict_data:
     date.append(datetime.datetime.fromtimestamp(int(date[0])))
-  # for index, data in enumerate(dict_data):
-  #   data.append(after)
 
-  #   if index == len(dict_data)-1:
-  #     before_time = after
-  #   else:
-  #     after += datetime.timedelta(hours=int(periods)/3600)
+  for middle_prices in dict_data:
+    middle = (middle_prices[2] + middle_prices[3]) / 2
+    middle_prices.append(middle)
 
+  updown, raw_data_val = [], []
+  updown_elem = {"up": 1, "down": 2, "flat": 3}
+  
+  for price_data in dict_data:
+    raw_data_val.append(price_data[-1])
+
+  for index, data in enumerate(dict_data):
+    if(index == len(dict_data)-1):
+      break
+    else:
+      if(data[-1] < dict_data[index+1][-1]):
+        data.append(updown_elem["up"])
+      elif(data[-1] == dict_data[index+1][-1]):
+        data.append(updown_elem["flat"])
+      else:
+        data.append(updown_elem["down"])
+
+  print(dict_data)
   with open("data.csv", "a") as f:
     writer = csv.writer(f, lineterminator='\n')
     writer.writerows(dict_data)
@@ -32,7 +47,7 @@ def main():
 
   with open("data.csv", "a") as f:
     writer = csv.writer(f, lineterminator='\n')
-    writer.writerow(["closetime", "openprice", "highprice", "lowprice", "closeprice", "volume", "datetime"])
+    writer.writerow(["closetime", "openprice", "highprice", "lowprice", "closeprice", "volume", "datetime", "averageprice", "updown"])
     
   # while now > after:
   print(after)
@@ -43,9 +58,7 @@ def main():
   print(url)
   with urllib.request.urlopen(url) as response:
     result = json.loads(response.read().decode('UTF-8'))
-    print(result)
     after = generate_csv(result['result'][periods], periods, after)
-    print(after)
 
 if __name__ == '__main__':
   main()

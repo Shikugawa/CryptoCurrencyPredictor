@@ -17,22 +17,6 @@ def main():
     'price': [ int(d) for d in data["openprice"] ] 
   })
 
-  # 価格の上がり下がりなんかを記録するカラムを作成する
-  updown = []
-  updown_elem = {"up": 1, "down": 2, "flat": 3}
-  raw_data_val = raw_data["openprice"].values
-
-  for index, current_data in enumerate(raw_data_val):
-    if(index == np.size(raw_data_val)-1):
-      break
-    else:
-      if(current_data < raw_data_val[index+1]):
-        updown.append(updown_elem["up"])
-      elif(current_data is raw_data_val[index+1]):
-        updown.append(updown_elem["flat"])
-      else:
-        updown.append(updown_elem["down"])
-  
   # datetimeを切ってhoutのみ抽出
   time_array = []
   for value in np.reshape(raw_data[["datetime"]].values, (-1, )):
@@ -41,13 +25,9 @@ def main():
   raw_data["hour"] = pd.Series(time_array)
 
   raw_data.drop([np.size(raw_data["openprice"].values)-1])
-  print(np.size(raw_data["openprice"].values)-1)
-  print(np.size(updown))
-  raw_data["updown"] = pd.Series(updown)
   raw_data = raw_data.dropna()
-  print(raw_data)
 
-  options = ["lowprice","closeprice","volume","hour","highprice","openprice"]
+  options = ["lowprice","closeprice","volume","hour","highprice","openprice", "averageprice"]
   df_train = raw_data[options]
   df_label = raw_data[["updown"]]
   

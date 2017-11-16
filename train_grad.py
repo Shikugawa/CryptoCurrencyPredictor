@@ -20,22 +20,10 @@ def main():
   except:
     print("some error has occured")
 
-  # 価格の上がり下がりなんかを記録するカラムを作成する
+  # 価格の上がり下がりなんかを記録するカラムを作成する y_test
   updown = []
   updown_elem = {"up": 1, "down": 2, "flat": 3}
   raw_data_val = raw_data["openprice"].values
-
-  for index, current_data in enumerate(raw_data_val):
-    print("%s, %s" % (current_data, raw_data["datetime"].values[-1]))
-    if(index == np.size(raw_data_val)-1):
-      break
-    else:
-      if(int(current_data) < int(raw_data_val[index+1])):
-        updown.append(updown_elem["up"])
-      elif(int(current_data) == int(raw_data_val[index+1])):
-        updown.append(updown_elem["flat"])
-      else:
-        updown.append(updown_elem["down"])
   
   # datetimeを切ってhoutのみ抽出
   time_array = []
@@ -44,12 +32,11 @@ def main():
   raw_data["hour"] = pd.Series(time_array)
 
   raw_data.drop([np.size(raw_data["openprice"].values)-1])
-  raw_data["updown"] = pd.Series(updown)
-  raw_data = raw_data.dropna()
   print(raw_data)
 
   # openprice...一定期間の最初の価格, closeprice..一定期間の最後の価格
-  options = ["lowprice","closeprice","volume","hour","highprice","openprice"]
+  options = ["lowprice","closeprice","volume","hour","highprice","openprice", "averageprice"]
+  print(raw_data[["hour"]])
   df_train = raw_data[options]
   df_label = raw_data[["updown"]]
   
@@ -59,6 +46,7 @@ def main():
   model = GradientBoostingClassifier(n_estimators=100, verbose=1)
   output = model.fit(x_train[options].values, np.reshape(y_train.values, (-1, ))).predict(x_test[options].values)
 
+  print(output)
   print(accuracy_score(np.reshape(y_test.values, (-1, )), output))
   fig = plt.figure()
   ax = fig.add_subplot(111)
