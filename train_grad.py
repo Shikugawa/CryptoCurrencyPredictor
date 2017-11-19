@@ -7,6 +7,7 @@ import matplotlib.dates as mdates
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.externals import joblib
 
 def main():
   raw_data = pd.read_csv("data.csv").dropna()
@@ -48,14 +49,8 @@ def main():
 
   print(output)
   print(accuracy_score(np.reshape(y_test.values, (-1, )), output))
-  fig = plt.figure()
-  ax = fig.add_subplot(111)
-
-  # x = range(0, len(np.reshape(x_test["datetime"].astype(datetime).values, (-1, ))))
-  # plt.xticks(x, np.reshape(x_test["datetime"].astype(datetime).values, (-1, )))
-  ax.plot(np.reshape(df['price'].values, (-1, )))
-  # ax.plot(x, output, color="r")
-  # plt.show()
+  
+  joblib.dump(output, 'model.pkl')
 
 if __name__ == '__main__':
   main()
