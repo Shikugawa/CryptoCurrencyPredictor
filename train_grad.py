@@ -11,20 +11,6 @@ from sklearn.externals import joblib
 
 def main():
   raw_data = pd.read_csv("data.csv").dropna()
-  data = raw_data[["openprice", "datetime"]].dropna()
-
-  try:
-    df = pd.DataFrame({
-      'time': pd.to_datetime(data["datetime"].astype(datetime)),
-      'price': [ int(d) for d in data["openprice"] ] 
-    })
-  except:
-    print("some error has occured")
-
-  # 価格の上がり下がりなんかを記録するカラムを作成する y_test
-  updown = []
-  updown_elem = {"up": 1, "down": 2, "flat": 3}
-  raw_data_val = raw_data["openprice"].values
   
   # datetimeを切ってhoutのみ抽出
   time_array = []
@@ -33,11 +19,9 @@ def main():
   raw_data["hour"] = pd.Series(time_array)
 
   raw_data.drop([np.size(raw_data["openprice"].values)-1])
-  print(raw_data)
 
   # openprice...一定期間の最初の価格, closeprice..一定期間の最後の価格
   options = ["lowprice","closeprice","volume","hour","highprice","openprice", "averageprice"]
-  print(raw_data[["hour"]])
   df_train = raw_data[options]
   df_label = raw_data[["updown"]]
   

@@ -4,7 +4,7 @@ import csv
 import datetime
 import time 
 
-def generate_csv(dict_data, periods, after):
+def generate_csv(dict_data):
   for date in dict_data:
     date.append(datetime.datetime.fromtimestamp(int(date[0])))
 
@@ -43,13 +43,10 @@ def main():
   after = datetime.datetime(2017, 6, 1, 0, 0, 0)
   periods = "3600"
 
-  before = str(time.mktime(now.timetuple()))
-
   with open("data.csv", "a") as f:
     writer = csv.writer(f, lineterminator='\n')
     writer.writerow(["closetime", "openprice", "highprice", "lowprice", "closeprice", "volume", "datetime", "averageprice", "updown"])
-    
-  # while now > after:
+
   print(after)
   print(int(time.mktime(after.timetuple())))
 
@@ -58,7 +55,7 @@ def main():
   print(url)
   with urllib.request.urlopen(url) as response:
     result = json.loads(response.read().decode('UTF-8'))
-    after = generate_csv(result['result'][periods], periods, after)
+    after = generate_csv(result['result'][periods])
 
 if __name__ == '__main__':
   main()
