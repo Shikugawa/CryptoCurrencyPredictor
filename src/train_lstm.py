@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers.recurrent import LSTM
+from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 import pandas as pd
@@ -29,9 +30,9 @@ class Model():
 
         return np.array(created_data), np.reshape(np.array(label), (-1, 1))
 
-    def create_model(self, x, y):
+    def create_model(self, y):
         model = Sequential()
-        model.add(LSTM(self.hidden_neurons, batch_input_shape=(None, x, y)))
+        model.add(LSTM(self.hidden_neurons, batch_input_shape=(None, self.term, y)))
         model.add(Dropout(0.5))
         model.add(Dense(self.in_out_newrons))
         model.add(Activation("relu"))
@@ -54,7 +55,6 @@ updown_data = []
 
 for index, data in enumerate(weighed_price):
     if (index == len(weighed_price) - 1):
-        updown_data.append(updown_elem["unknown"])
         break
     else:
         if (data < weighed_price[index + 1]):
@@ -64,6 +64,7 @@ for index, data in enumerate(weighed_price):
         else:
             updown_data.append(updown_elem["down"])
 
+raw_data.drop(len(weighed_price))
 raw_data["updown"] = updown_data
 
 raw_data = raw_data.drop(["Timestamp"], axis=1)
@@ -84,4 +85,22 @@ x_train = scaler.fit_transform(x_train)
 
 x_train, y_train = lstm_model.create_data(x_train, y_train)
 
-print(x_train)
+model = lstm_model.create_model(len(options))
+model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+# -------------training-------------
+check = ModelCheckpoint("model.hdf5")
+output = model.fit(x_train, y_train, epochs=20, callbacks=[check], verbose=1)
+
+# -------------evaluation-------------
+x_test = x_test[options].values
+y_test = y_test.values
+
+# test data normalize
+scaler = preprocessing.MinMaxScaler()
+x_test = scaler.fit_transform(x_test)
+
+x_test, y_test = lstm_model.create_data(x_test, y_test)
+metrics = model.evaluate(x_test, y_test, show_accuracy=True)
+print("\nloss:{} accuracy:{}".format(metrics[0], metrics[1]))
+
