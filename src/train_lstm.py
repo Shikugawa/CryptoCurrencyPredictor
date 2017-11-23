@@ -2,6 +2,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers.recurrent import LSTM
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 import pandas as pd
 import numpy as np
 import datetime
@@ -77,5 +78,10 @@ x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_si
 x_train = x_train[options].values
 y_train = y_train.values
 
+# normalize
+scaler = preprocessing.MinMaxScaler()
+x_train = scaler.fit_transform(x_train)
+
 x_train, y_train = lstm_model.create_data(x_train, y_train)
 
+print(x_train)
