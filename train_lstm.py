@@ -4,6 +4,8 @@ from keras.layers.recurrent import LSTM
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
+import datetime
+import re
 
 class Model():
     def __init__(self, term):
@@ -34,10 +36,38 @@ class Model():
         model.add(Activation("relu"))
         return model
 
-raw_data = pd.read_csv("data.csv").dropna()
-raw_data = raw_data.drop(["closetime", "datetime"], axis=1)
+raw_data = pd.read_csv("coincheck.csv").dropna()
 
-options = ["lowprice", "closeprice", "volume", "hour", "highprice", "openprice", "averageprice"]
+# append hour
+hour = []
+hour_data = np.reshape(raw_data[["Timestamp"]].values, (-1, ))
+for timestamp in hour_data:
+    time = datetime.datetime.fromtimestamp(int(timestamp))
+    hour.append(re.match(r"\d{4}-\d{1,2}-\d{1,2} (\d\d):\d\d:\d\d", str(time)).group(1))
+raw_data["Hour"] = hour
+
+# append updown
+updown_elem = {"up": 0, "down": 1, "flat": 2, "unknown": 9}
+weighed_price = np.reshape(raw_data[["Weighted_Price"]].values, (-1, ))
+updown_data = []
+
+for index, data in enumerate(weighed_price):
+    if (index == len(weighed_price) - 1):
+        updown_data.append(updown_elem["unknown"])
+        break
+    else:
+        if (data < weighed_price[index + 1]):
+            updown_data.append(updown_elem["up"])
+        elif (data == weighed_price[index+1]):
+            updown_data.append(updown_elem["flat"])
+        else:
+            updown_data.append(updown_elem["down"])
+
+raw_data["updown"] = updown_data
+
+raw_data = raw_data.drop(["Timestamp"], axis=1)
+
+options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Weighted_Price", "Hour"]
 df_train = raw_data[options]
 df_label = raw_data[["updown"]]
 
