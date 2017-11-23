@@ -3,6 +3,7 @@ import json
 import csv
 import datetime
 import time 
+import re
 
 def generate_csv(dict_data):
   for date in dict_data:
@@ -18,6 +19,9 @@ def generate_csv(dict_data):
   for price_data in dict_data:
     raw_data_val.append(price_data[-1])
 
+  for value in dict_data:
+    value.append(re.match(r"\d{4}-\d{1,2}-\d{1,2} (\d\d):\d\d:\d\d", str(value[6])).group(1))
+
   for index, data in enumerate(dict_data):
     if(index == len(dict_data)-1):
       break
@@ -30,6 +34,7 @@ def generate_csv(dict_data):
         data.append(updown_elem["down"])
 
   print(dict_data)
+
   with open("data.csv", "a") as f:
     writer = csv.writer(f, lineterminator='\n')
     writer.writerows(dict_data)
@@ -45,7 +50,7 @@ def main():
 
   with open("data.csv", "a") as f:
     writer = csv.writer(f, lineterminator='\n')
-    writer.writerow(["closetime", "openprice", "highprice", "lowprice", "closeprice", "volume", "datetime", "averageprice", "updown"])
+    writer.writerow(["closetime", "openprice", "highprice", "lowprice", "closeprice", "volume", "datetime", "averageprice", "hour", "updown"])
 
   print(after)
   print(int(time.mktime(after.timetuple())))
