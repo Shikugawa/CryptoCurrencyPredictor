@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers.recurrent import LSTM
+from keras.utils import np_utils
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
@@ -28,17 +29,20 @@ class Model():
                 label.append(label_data[index])
                 nested_data = []
 
-        return np.array(created_data), np.reshape(np.array(label), (-1, 1))
+        # convert to one hot encoding
+        label = np.reshape(np.array(label), (-1, 1))
+        label = np_utils.to_categorical(label)
+        return np.array(created_data), label
 
     def create_model(self, y):
         model = Sequential()
         model.add(LSTM(self.hidden_neurons, batch_input_shape=(None, self.term, y)))
         model.add(Dropout(0.5))
         model.add(Dense(self.in_out_newrons))
-        model.add(Activation("relu"))
+        model.add(Activation("softmax"))
         return model
 
-raw_data = pd.read_csv("coincheck.csv").dropna()
+raw_data = pd.read_csv("/Users/kiyohoshi/CryptoCurrencyPredictor/coincheck.csv").dropna()
 
 # append hour
 hour = []
@@ -64,7 +68,7 @@ for index, data in enumerate(weighed_price):
         else:
             updown_data.append(updown_elem["down"])
 
-raw_data.drop(len(weighed_price))
+raw_data = raw_data.drop(len(weighed_price)-1)
 raw_data["updown"] = updown_data
 
 raw_data = raw_data.drop(["Timestamp"], axis=1)
@@ -84,7 +88,7 @@ scaler = preprocessing.MinMaxScaler()
 x_train = scaler.fit_transform(x_train)
 
 x_train, y_train = lstm_model.create_data(x_train, y_train)
-
+print(y_train)
 model = lstm_model.create_model(len(options))
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
