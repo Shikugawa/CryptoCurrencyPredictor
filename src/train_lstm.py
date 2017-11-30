@@ -13,7 +13,7 @@ import re
 class Model():
     def __init__(self, term):
         self.hidden_neurons = 128
-        self.in_out_newrons = 1
+        self.in_out_newrons = 3
         self.term = term
 
     def create_data(self, data, label_data):
@@ -105,6 +105,6 @@ scaler = preprocessing.MinMaxScaler()
 x_test = scaler.fit_transform(x_test)
 
 x_test, y_test = lstm_model.create_data(x_test, y_test)
-metrics = model.evaluate(x_test, y_test, show_accuracy=True)
-print("\nloss:{} accuracy:{}".format(metrics[0], metrics[1]))
+loss, accuracy = model.evaluate(x_test, y_test)
+print("\nloss:{} accuracy:{}".format(loss, accuracy))
 
