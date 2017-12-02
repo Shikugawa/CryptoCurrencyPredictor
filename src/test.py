@@ -1,11 +1,11 @@
 import pandas as pd
+import numpy as np
 
 raw_data = pd.read_csv("coincheck.csv").dropna()
 
-# append bolinger band
-base = raw_data[["Close"]].rolling(window=25).mean()
-std = raw_data[["Close"]].rolling(window=25).std()
-band1_upper = base + 2 * std
-band1_lower = base - 2 * std
-
-print(band1_lower)
+high = raw_data[["High"]].rolling(window=9 * 60 * 24, center=False).max().dropna()
+low = raw_data[["Low"]].rolling(window=9 * 60 * 24, center=False).min().dropna()
+high = high.values
+low = low.values
+data = np.reshape(high + low, (-1, ))
+print(data)

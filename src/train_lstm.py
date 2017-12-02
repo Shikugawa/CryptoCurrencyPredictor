@@ -51,15 +51,28 @@ class TechnicalTerm():
 
         for opt in bolinger_option:
             if opt == "bolinger_upper1":
-                raw_data = raw_data[opt] = base + std
+                raw_data[opt] = base + std
             elif opt == "bolinger_lower1":
-                raw_data = raw_data[opt] = base - std
-            elif opt == "bolinger_lower1":
-                raw_data = raw_data[opt] = base + 2 * std
-            elif opt == "bolinger_lower1":
-                raw_data = raw_data[opt] = base - 2 * std
+                raw_data[opt] = base - std
+            elif opt == "bolinger_upper2":
+                raw_data[opt] = base + 2 * std
+            elif opt == "bolinger_lower2":
+                raw_data[opt] = base - 2 * std
 
+        data = raw_data.dropna()
+        return data
+
+    @classmethod
+    def conversion(self, raw_data):
+        raw_data["rol_high"] = raw_data[["High"]].rolling(window=9*60*24).max()
+        raw_data["rol_low"] = raw_data[["Low"]].rolling(window=9*60*24).min()
         raw_data = raw_data.dropna()
+
+        high = raw_data[["rol_high"]].values
+        low = raw_data[["rol_low"]].values
+        raw_data["conversion"] = np.reshape((high + low) / 2, (-1, ))
+        data = raw_data
+
         return data
 
 raw_data = pd.read_csv("coincheck.csv").dropna()
@@ -96,8 +109,11 @@ raw_data = raw_data.drop(["Timestamp"], axis=1)
 # append bolinger band
 raw_data = TechnicalTerm.bolinger_band(raw_data)
 
+# append conversion line
+raw_data = TechnicalTerm.conversion(raw_data)
+
 options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Weighted_Price", "Hour",
-           "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2"]
+           "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2", "conversion"]
 df_train = raw_data[options]
 df_label = raw_data[["updown"]]
 
@@ -112,7 +128,6 @@ scaler = preprocessing.MinMaxScaler()
 x_train = scaler.fit_transform(x_train)
 
 x_train, y_train = lstm_model.create_data(x_train, y_train)
-print(y_train)
 model = lstm_model.create_model(len(options))
 model.compile(loss="categorical_crossentropy", optimizer="nadam", metrics=["accuracy"])
 
