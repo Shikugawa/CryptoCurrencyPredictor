@@ -5,39 +5,23 @@ from keras.utils import np_utils
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+import GPy, GPyOpt
 import pandas as pd
 import numpy as np
 import datetime
 import re
 
 class Model():
-    def __init__(self, term):
-        self.hidden_neurons = 256
+    def __init__(self, term, neurons, dropout):
+        self.hidden_neurons = neurons
         self.in_out_newrons = 3
+        self.dropout = dropout
         self.term = term
-
-    def create_data(self, data, label_data):
-        created_data = []
-        nested_data = []
-        label = []
-
-        for index, dt in enumerate(data):
-            nested_data.append(dt)
-
-            if len(nested_data) == self.term:
-                created_data.append(nested_data)
-                label.append(label_data[index])
-                nested_data = []
-
-        # convert to one hot encoding
-        label = np.reshape(np.array(label), (-1, 1))
-        label = np_utils.to_categorical(label)
-        return np.array(created_data), label
 
     def create_model(self, y):
         model = Sequential()
         model.add(LSTM(self.hidden_neurons, batch_input_shape=(None, self.term, y)))
-        model.add(Dropout(0.5))
+        model.add(Dropout(self.dropout))
         model.add(Dense(self.in_out_newrons))
         model.add(Activation("softmax"))
         return model
@@ -74,6 +58,48 @@ class TechnicalTerm():
         data = raw_data
 
         return data
+
+def create_data(data, label_data, term):
+    created_data = []
+    nested_data = []
+    label = []
+
+    for index, dt in enumerate(data):
+        nested_data.append(dt)
+
+        if len(nested_data) == term:
+            created_data.append(nested_data)
+            label.append(label_data[index])
+            nested_data = []
+
+    # convert to one hot encoding
+    label = np.reshape(np.array(label), (-1, 1))
+    label = np_utils.to_categorical(label)
+    return np.array(created_data), label
+
+def training(x_train, y_train, x_test, y_test, term, neurons=128, dropout=0.5, epoch=20):
+    lstm_model = Model(term=term, neurons=neurons, dropout=dropout)
+
+    model = lstm_model.create_model(len(options))
+    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    # -------------training-------------
+    check = ModelCheckpoint("model.hdf5")
+    output = model.fit(x_train, y_train, epochs=epoch, callbacks=[check], verbose=1)
+
+    # sns.factorplot(data=output, kind='violin', col='species')
+
+    # -------------evaluation-------------
+    x_test = x_test[options].values
+    y_test = y_test.values
+
+    # test data normalize
+    scaler = preprocessing.MinMaxScaler()
+    x_test = scaler.fit_transform(x_test)
+
+    x_test, y_test = lstm_model.create_data(x_test, y_test)
+    loss, accuracy = model.evaluate(x_test, y_test)
+
+    return loss, accuracy
 
 raw_data = pd.read_csv("coincheck.csv").dropna()
 
@@ -116,8 +142,7 @@ options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", 
            "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2", "conversion"]
 df_train = raw_data[options]
 df_label = raw_data[["updown"]]
-
-lstm_model = Model(10)
+term = 10
 
 x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_size=0.9, random_state=0)
 x_train = x_train[options].values
@@ -127,23 +152,23 @@ y_train = y_train.values
 scaler = preprocessing.MinMaxScaler()
 x_train = scaler.fit_transform(x_train)
 
-x_train, y_train = lstm_model.create_data(x_train, y_train)
-model = lstm_model.create_model(len(options))
-model.compile(loss="categorical_crossentropy", optimizer="nadam", metrics=["accuracy"])
+x_train, y_train = create_data(x_train, y_train, term)
 
-# -------------training-------------
-check = ModelCheckpoint("model.hdf5")
-output = model.fit(x_train, y_train, epochs=30, callbacks=[check], verbose=1)
+# bayesian optimization
+bounds = [
+    {'name': 'neurons', 'type': 'discrete', 'domain': (64, 128, 256, 512, 1024)},
+    {'name': 'dropout', 'type': 'continuous', 'domain': (0.0, 1.0)},
+    {'name': 'epoch', 'type': 'discrete', 'domain': (10, 20, 30)}
+]
 
-# -------------evaluation-------------
-x_test = x_test[options].values
-y_test = y_test.values
+def f(x):
+    print(x)
+    loss, accuraccy = training(x_train, y_train, x_test, y_test, term=term)
+    print("loss: {0}, accuraccy: {0}".format(loss, accuraccy))
+    return loss
 
-# test data normalize
-scaler = preprocessing.MinMaxScaler()
-x_test = scaler.fit_transform(x_test)
+opt_lstm = GPyOpt.methods.BayesianOptimization(f=f, domain=bounds)
+opt_lstm.run_optimization(max_iter=10)
 
-x_test, y_test = lstm_model.create_data(x_test, y_test)
-loss, accuracy = model.evaluate(x_test, y_test)
-print("\nloss:{} accuracy:{}".format(loss, accuracy))
-
+print("optimized parameters: {0}".format(opt_lstm.x_opt))
+print("optimized loss: {0}".format(opt_lstm.fx_opt))
