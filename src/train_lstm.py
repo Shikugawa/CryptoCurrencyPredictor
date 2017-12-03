@@ -96,7 +96,7 @@ def training(x_train, y_train, x_test, y_test, term, neurons=128, dropout=0.5, e
     scaler = preprocessing.MinMaxScaler()
     x_test = scaler.fit_transform(x_test)
 
-    x_test, y_test = lstm_model.create_data(x_test, y_test)
+    x_test, y_test = create_data(x_test, y_test, term)
     loss, accuracy = model.evaluate(x_test, y_test)
 
     return loss, accuracy
