@@ -100,7 +100,7 @@ def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128,
 
     return loss, accuracy
 
-raw_data = pd.read_csv("coincheck.csv").dropna()
+raw_data = pd.read_csv("../coincheck.csv").dropna()
 
 # append average prices data
 avep = price_average(raw_data.values)
