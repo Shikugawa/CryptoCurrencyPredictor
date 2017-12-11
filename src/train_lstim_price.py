@@ -1,10 +1,7 @@
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+from keras.layers import Dense, Dropout
 from keras.layers.recurrent import LSTM
-from keras.utils import np_utils
-from keras.callbacks import ModelCheckpoint
-from sklearn.model_selection import train_test_split
-from sklearn import preprocessing
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import datetime
@@ -56,55 +53,36 @@ def create_data(data, label_data, term):
             label.append(label_data[index])
             nested_data = []
 
-    # convert to one hot encoding
-    label = np.reshape(np.array(label), (-1, 1))
-    label = np_utils.to_categorical(label)
+    label = np.reshape(np.array(label), (-1, ))
     return np.array(created_data), label
 
-def price_average(data):
-    average_prices = []
+def split_data(train, label, testing_rate=0.9):
+    train_x, test_x = train[1:int(len(train) * testing_rate)], train[1 + int(len(train) * testing_rate):len(train)]
+    train_y, test_y = label[1:int(len(label) * 0.9)], label[1 + int(len(label) * 0.9):len(label)]
+    return train_x, train_y, test_x, test_y
 
-    for d in data:
-        ave = 0
-
-        for _d in range(0, 4):
-            ave += _d
-
-        ave /= 4
-        average_prices.append(ave)
-
-    return average_prices
-
-def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128, dropout=0.5, epoch=20):
+def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128, dropout=0.25, epoch=20):
     model = Sequential()
     model.add(LSTM(neurons, batch_input_shape=(None, term, option_length), activation='relu'))
     model.add(Dropout(dropout))
-    model.add(Dense(3, activation='softmax'))
+    model.add(Dense(1, activation='linear'))
 
-    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+    model.compile(loss="mean_squared_error", optimizer="adam")
 
     # -------------training-------------
-    check = ModelCheckpoint("model.hdf5")
-    output = model.fit(x_train, y_train, epochs=epoch, callbacks=[check], verbose=1)
+    output = model.fit(x_train, y_train, epochs=epoch, verbose=1)
 
-    # -------------evaluation-------------
-    x_test = x_test[options].values
-    y_test = y_test.values
-
-    # test data normalize
-    scaler = preprocessing.MinMaxScaler()
-    x_test = scaler.fit_transform(x_test)
-
-    x_test, y_test = create_data(x_test, y_test, term)
-    loss, accuracy = model.evaluate(x_test, y_test)
-
-    return loss, accuracy
+    predicted_price = model.predict(x_test)
+    datas = pd.DataFrame(
+        data = {
+            'real_price': y_test,
+            'predicted_price': predicted_price
+        }
+    )
+    datas.plot()
+    plt.show()
 
 raw_data = pd.read_csv("../coincheck.csv").dropna()
-
-# append average prices data
-avep = price_average(raw_data.values)
-raw_data["average_price"] = avep
 
 # append hour
 hour = []
@@ -114,37 +92,31 @@ for timestamp in hour_data:
     hour.append(re.match(r"\d{4}-\d{1,2}-\d{1,2} (\d\d):\d\d:\d\d", str(time)).group(1))
 
 raw_data["Hour"] = hour
-
 raw_data = raw_data.drop(["Timestamp"], axis=1)
 
 # append bolinger band
 raw_data = TechnicalTerm.bolinger_band(raw_data)
-
 # append conversion line
 raw_data = TechnicalTerm.conversion(raw_data)
 
-print(raw_data)
-
-options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Weighted_Price", "Hour",
+options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Hour",
            "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2", "conversion"]
 df_train = raw_data[options]
-df_label = raw_data[["updown"]]
+df_label = raw_data[["Weighted_Price"]]
 term = 10
 
-x_train, x_test, y_train, y_test = train_test_split(df_train, df_label, train_size=0.9, random_state=0)
-
-scaler = preprocessing.MinMaxScaler()
+x_train, x_test, y_train, y_test = split_data(df_train, df_label)
 
 # ----train data noramlization---------
 x_train = x_train[options].values
 y_train = y_train.values
-x_train = scaler.fit_transform(x_train)
 x_train, y_train = create_data(x_train, y_train, term)
 # -------------------------------------
 
 # ----train data noramlization---------
-x_train = x_train[options].values
-y_train = y_train.values
-x_train = scaler.fit_transform(x_train)
-x_train, y_train = create_data(x_train, y_train, term)
+x_test = x_test[options].values
+y_test = y_test.values
+x_test, y_test = create_data(x_test, y_test, term)
 # -------------------------------------
+
+training(x_train, y_train, x_test, y_test, term, len(options), neurons=128, dropout=0.25, epoch=1)
