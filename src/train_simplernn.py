@@ -115,13 +115,12 @@ raw_data["Hour"] = hour
 raw_data = raw_data.drop(["Timestamp"], axis=1)
 
 # append bolinger band
-raw_data = TechnicalTerm.bolinger_band(raw_data)
+# raw_data = TechnicalTerm.bolinger_band(raw_data)
 # append conversion line
-raw_data = TechnicalTerm.conversion(raw_data)
+# raw_data = TechnicalTerm.conversion(raw_data)
 
 print(raw_data.head(2))
-options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Hour",
-           "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2", "conversion"]
+options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Hour"]
 df_train = raw_data[options]
 df_label = raw_data[["Weighted_Price"]]
 term = 10
@@ -140,4 +139,4 @@ y_test = y_test.values
 x_test, y_test = create_data(x_test, y_test, term)
 # -------------------------------------
 
-training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.25, epoch=40)
+training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.50, epoch=40)
