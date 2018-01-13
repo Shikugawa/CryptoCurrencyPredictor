@@ -11,41 +11,6 @@ import re
 
 plt.style.use('ggplot')
 
-
-class TechnicalTerm():
-    @classmethod
-    def bolinger_band(self, raw_data):
-        bolinger_option = ["bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2"]
-        base = raw_data[["Close"]].rolling(window=25).mean()
-        std = raw_data[["Close"]].rolling(window=25).std()
-
-        for opt in bolinger_option:
-            if opt == "bolinger_upper1":
-                raw_data[opt] = base + std
-            elif opt == "bolinger_lower1":
-                raw_data[opt] = base - std
-            elif opt == "bolinger_upper2":
-                raw_data[opt] = base + 2 * std
-            elif opt == "bolinger_lower2":
-                raw_data[opt] = base - 2 * std
-
-        data = raw_data.dropna()
-        return data
-
-    @classmethod
-    def conversion(self, raw_data):
-        raw_data["rol_high"] = raw_data[["High"]].rolling(window=9 * 60 * 24).max()
-        raw_data["rol_low"] = raw_data[["Low"]].rolling(window=9 * 60 * 24).min()
-        raw_data = raw_data.dropna()
-
-        high = raw_data[["rol_high"]].values
-        low = raw_data[["rol_low"]].values
-        raw_data["conversion"] = np.reshape((high + low) / 2, (-1,))
-        data = raw_data
-
-        return data
-
-
 def create_data(data, label_data, term):
     created_data = []
     nested_data = []
@@ -64,7 +29,7 @@ def create_data(data, label_data, term):
     return np.array(created_data), label
 
 
-def split_data(train, label, testing_rate=0.7):
+def split_data(train, label, testing_rate=0.9):
     train_x, test_x = train[1:int(len(train) * testing_rate)], train[1 + int(len(train) * testing_rate):len(train)]
     train_y, test_y = label[1:int(len(label) * testing_rate)], label[1 + int(len(label) * testing_rate):len(label)]
     return train_x, train_y, test_x, test_y
@@ -97,13 +62,13 @@ def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128,
     plt.ylabel('loss')
     plt.legend(['loss'], loc='lower right')
 
-    datas.plot(figsize=(16, 10))
+    datas.plot(figsize=(12, 7))
     plt.show()
     print(mean_absolute_error(np.reshape(y_test, (-1,)),
                               np.reshape(predicted_price, (-1,))))
 
 
-raw_data = pd.read_csv("/Users/shimizurei/CryptoCurrencyPredictor/src/coin.csv").dropna()
+raw_data = pd.read_csv("/Users/shimizurei/CryptoCurrencyPredictor/src/coin_refine.csv").dropna()
 
 # append hour
 hour = []
@@ -115,14 +80,8 @@ for timestamp in hour_data:
 raw_data["Hour"] = hour
 raw_data = raw_data.drop(["Timestamp"], axis=1)
 
-# append bolinger band
-raw_data = TechnicalTerm.bolinger_band(raw_data)
-# append conversion line
-raw_data = TechnicalTerm.conversion(raw_data)
-
 print(raw_data.head(2))
-options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Hour",
-           "bolinger_upper1", "bolinger_lower1", "bolinger_upper2", "bolinger_lower2", "conversion"]
+options = ["Open", "High", "Low", "Close", "Volume_(BTC)", "Volume_(Currency)", "Hour"]
 df_train = raw_data[options]
 df_label = raw_data[["Weighted_Price"]]
 term = 10
