@@ -69,7 +69,7 @@ def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128,
     print(mean_absolute_error(np.reshape(y_test, (-1,)),
                               np.reshape(predicted_price, (-1,))))
 
-raw_data = pd.read_csv("/Users/shimizurei/CryptoCurrencyPredictor/src/coin.csv").dropna()
+raw_data = pd.read_csv("C:\\Users\\shikugawa\\CryptoCurrencyPredictor\\src\\coin_refine.csv").dropna()
 
 # append hour
 hour = []
@@ -100,4 +100,4 @@ y_test = y_test.values
 x_test, y_test = create_data(x_test, y_test, term)
 # -------------------------------------
 
-training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.50, epoch=40)
+training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.25, epoch=35)
