@@ -29,7 +29,7 @@ def create_data(data, label_data, term):
     return np.array(created_data), label
 
 
-def split_data(train, label, testing_rate=0.9):
+def split_data(train, label, testing_rate=0.8):
     train_x, test_x = train[1:int(len(train) * testing_rate)], train[1 + int(len(train) * testing_rate):len(train)]
     train_y, test_y = label[1:int(len(label) * testing_rate)], label[1 + int(len(label) * testing_rate):len(label)]
     return train_x, train_y, test_x, test_y
@@ -44,7 +44,7 @@ def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128,
     model.add(Dense(1, activation='linear'))
 
     model.compile(loss="mean_squared_error", optimizer="adam")
-
+    model.summary()
     # -------------training-------------
     output = model.fit(x_train, y_train, epochs=epoch, verbose=1)
 
@@ -69,7 +69,7 @@ def training(x_train, y_train, x_test, y_test, term, option_length, neurons=128,
                               np.reshape(predicted_price, (-1,))))
 
 
-raw_data = pd.read_csv("C:\\Users\\shikugawa\\CryptoCurrencyPredictor\\src\\coin_refine.csv").dropna()
+raw_data = pd.read_csv("/Users/shimizurei/CryptoCurrencyPredictor/coin.csv").dropna()
 
 # append hour
 hour = []
@@ -101,4 +101,4 @@ y_test = y_test.values
 x_test, y_test = create_data(x_test, y_test, term)
 # -------------------------------------
 
-training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.25, epoch=35)
+training(x_train, y_train, x_test, y_test, term, len(options), neurons=256, dropout=0.25, epoch=40)
